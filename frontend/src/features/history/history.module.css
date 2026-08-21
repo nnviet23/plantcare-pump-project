@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Thẻ Thống Kê */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.statCard {
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 20px rgba(27, 42, 58, 0.03);
+}
+
+.statHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.statTitle {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.statIcon {
+    color: #1b2a3a;
+    background-color: #f7f5f0;
+    padding: 0.4rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statValue {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1b2a3a;
+}
+
+.statUnit {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #64748b;
+}
+
+/* Thanh Bộ Lọc */
+.filterCard {
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(27, 42, 58, 0.03);
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.filterLabel {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.inputSelect {
+    padding: 0.6rem 0.85rem;
+    border: 1px solid #dcd6cd;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    background-color: #fcfbf9;
+    color: #1b2a3a;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.inputSelect:focus {
+    border-color: #1b2a3a;
+}
+
+/* Bảng Lịch Sử */
+.tableCard {
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(27, 42, 58, 0.03);
+    overflow: hidden;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.88rem;
+}
+
+.table th {
+    background-color: #f7f5f0;
+    color: #1b2a3a;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e8e4dc;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f0ece1;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover {
+    background-color: #fcfbf9;
+}
+
+.timeText {
+    font-family: monospace;
+    font-weight: 600;
+    color: #1b2a3a;
+}
+
+.durationText {
+    font-weight: 600;
+    color: #475569;
+}
+
+.humidityText {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #0284c7;
+}
+
+.reasonText {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+/* Badges cho trạng thái */
+.badgeAuto {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badgeManual {
+    background-color: #fef3c7;
+    color: #b45309;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}

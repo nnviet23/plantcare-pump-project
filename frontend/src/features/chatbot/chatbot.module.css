@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+
+.container {
+    min-height: 100vh;
+    background-color: #f7f5f0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1b2a3a;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Navbar */
+.header {
+    background-color: #f7f5f0;
+    border-bottom: 1px solid #e8e4dc;
+    padding: 1.25rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navLinks {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.navItem {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.navItem:hover,
+.navItemActive {
+    color: #1b2a3a;
+    background-color: rgba(27, 42, 58, 0.05);
+}
+
+.userProfile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1b2a3a;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 20px;
+}
+
+/* Main Layout */
+.main {
+    max-width: 950px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.topBar {
+    margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Khung Chat Card */
+.chatCard {
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(27, 42, 58, 0.03);
+    display: flex;
+    flex-direction: column;
+    height: 580px;
+    overflow: hidden;
+}
+
+/* Danh sách tin nhắn (Scroll Area) */
+.messagesContainer {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    background-color: #fcfbf9;
+}
+
+.messageRow {
+    display: flex;
+    gap: 0.85rem;
+    max-width: 80%;
+}
+
+.userRow {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.aiRow {
+    align-self: flex-start;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.userAvatar {
+    background-color: #e2e8f0;
+    color: #1b2a3a;
+}
+
+.aiAvatar {
+    background-color: #1b2a3a;
+    color: #ffffff;
+}
+
+.bubble {
+    padding: 0.9rem 1.1rem;
+    border-radius: 14px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.userBubble {
+    background-color: #1b2a3a;
+    color: #ffffff;
+    border-top-right-radius: 2px;
+}
+
+.aiBubble {
+    background-color: #ffffff;
+    color: #1b2a3a;
+    border: 1px solid #e8e4dc;
+    border-top-left-radius: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+/* Gợi ý câu hỏi nhanh (Chips) */
+.suggestionsBox {
+    padding: 0.75rem 1.5rem;
+    background-color: #ffffff;
+    border-top: 1px solid #f0ece1;
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+}
+
+.chip {
+    padding: 0.45rem 0.85rem;
+    background-color: #f7f5f0;
+    border: 1px solid #e8e4dc;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #1b2a3a;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.chip:hover {
+    background-color: #1b2a3a;
+    color: #ffffff;
+    border-color: #1b2a3a;
+}
+
+/* Ô Nhập Tin Nhắn (Input Bar) */
+.inputForm {
+    padding: 1rem 1.5rem;
+    background-color: #ffffff;
+    border-top: 1px solid #e8e4dc;
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.input {
+    flex: 1;
+    padding: 0.85rem 1.1rem;
+    border: 1px solid #dcd6cd;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    outline: none;
+    background-color: #fcfbf9;
+    color: #1b2a3a;
+    transition: all 0.2s ease;
+}
+
+.input:focus {
+    border-color: #1b2a3a;
+    background-color: #ffffff;
+}
+
+.sendBtn {
+    padding: 0.85rem 1.25rem;
+    background-color: #1b2a3a;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.sendBtn:hover {
+    background-color: #2c3e50;
+}

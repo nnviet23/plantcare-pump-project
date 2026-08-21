@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.footer {
+    background-color: #131c27;
+    /* Tone màu Dark Navy chuẩn ChàGee */
+    color: #94a3b8;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    padding: 3.5rem 2.5rem 2rem 2.5rem;
+    margin-top: auto;
+    box-sizing: border-box;
+}
+
+.footerContainer {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1.2fr;
+    /* Chia 3 cột: Cột 1 rộng gấp đôi */
+    gap: 3rem;
+    margin-bottom: 2.5rem;
+}
+
+/* Cột 1: Logo & Brand */
+.brandCol {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.description {
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: #94a3b8;
+    margin: 0;
+    max-width: 380px;
+}
+
+/* Cột 2 & Cột 3: Tiêu đề & Danh sách link */
+.linkCol {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.colTitle {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.linkList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.link {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.link:hover {
+    color: #ffffff;
+}
+
+.infoText {
+    color: #94a3b8;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+/* Đường kẻ phân cách & Copyright */
+.divider {
+    max-width: 1100px;
+    margin: 0 auto 1.5rem auto;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.copyrightContainer {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.copyrightText {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Responsive cho màn hình thiết bị di động */
+@media (max-width: 768px) {
+    .footerContainer {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+}

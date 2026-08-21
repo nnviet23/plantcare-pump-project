@@ -1,0 +1,264 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* Container bao quanh User Profile để làm mỏ neo định vị */
+.userProfileContainer {
+    position: relative;
+}
+
+.userProfile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1b2a3a;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.userProfile:hover {
+    background-color: #f7f5f0;
+    border-color: #1b2a3a;
+}
+
+/* Bảng Popover kiểu Gmail */
+.profilePopover {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    right: 0;
+    width: 250px;
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 16px;
+    padding: 1.5rem 1.25rem;
+    box-shadow: 0 10px 30px rgba(27, 42, 58, 0.1);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: popoverFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Ảnh đại diện Avatar tròn lớn */
+.popoverAvatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #1b2a3a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px rgba(27, 42, 58, 0.15);
+}
+
+.popoverName {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    margin: 0 0 0.2rem 0;
+}
+
+.popoverEmail {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin: 0 0 1.2rem 0;
+    word-break: break-all;
+}
+
+.popoverDivider {
+    width: 100%;
+    height: 1px;
+    background-color: #f0ece1;
+    margin-bottom: 1rem;
+}
+
+/* Nút Đăng xuất màu đỏ dịu */
+.logoutBtn {
+    width: 100%;
+    padding: 0.65rem;
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+    background-color: #fee2e2;
+    border-color: #fca5a5;
+    color: #b91c1c;
+}
+
+/* Thẻ chữ Menu - Xóa sạch background và border */
+.navItem {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.5rem 0.25rem;
+    position: relative;
+    background: transparent !important;
+    /* Xóa màu nền */
+    border: none !important;
+    /* Xóa khung viền */
+    box-shadow: none !important;
+    /* Xóa đổ bóng */
+    border-radius: 0 !important;
+    /* Xóa bo góc */
+    transition: color 0.2s ease;
+}
+
+/* Thanh gạch dưới animated */
+.navItem::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #1b2a3a;
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+
+/* Hover & Active: Chỉ đổi màu chữ và bật thanh gạch dưới */
+.navItem:hover,
+.navItemActive {
+    color: #1b2a3a !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.navItem:hover::after,
+.navItemActive::after {
+    transform: scaleX(1) !important;
+    transform-origin: bottom left;
+}
+
+.container {
+    min-height: 100vh;
+    background-color: #f7f5f0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #1b2a3a;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header & Navbar */
+.header {
+    background-color: #f7f5f0;
+    border-bottom: 1px solid #e8e4dc;
+    padding: 1.25rem 2.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navLinks {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.navItem {
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 0.85rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.navItem:hover,
+.navItemActive {
+    color: #1b2a3a;
+    background-color: rgba(27, 42, 58, 0.05);
+}
+
+.userProfile {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1b2a3a;
+    padding: 0.5rem 1rem;
+    background-color: #ffffff;
+    border: 1px solid #e8e4dc;
+    border-radius: 20px;
+}
+
+/* Main Layout */
+.main {
+    max-width: 950px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    box-sizing: border-box;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.topBar {
+    margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1b2a3a;
+    margin: 0 0 0.25rem 0;
+}
+
+.pageSubtitle {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: 0;
+}
