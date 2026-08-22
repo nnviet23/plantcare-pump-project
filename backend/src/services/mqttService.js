@@ -7,7 +7,7 @@ const client = mqtt.connect(process.env.MQTT_BROKER_URL, {
 });
 
 client.on('connect', () => {
-  console.log('🟢 Đã kết nối thành công tới MQTT Broker!');
+  console.log('Đã kết nối thành công tới MQTT Broker!');
   
   // Đăng ký nhận dữ liệu từ các Topic
   client.subscribe(['smartfarm/telemetry', 'smartfarm/pump/status'], (err) => {
