@@ -9,7 +9,7 @@
     color: #1b2a3a;
 }
 
-/* Header mỏng, tinh tế */
+/* Header */
 .header {
     padding: 1.5rem 3rem;
     display: flex;
@@ -40,7 +40,7 @@
     padding: 3rem 1.5rem;
 }
 
-/* Card Form Đăng Nhập/Đăng Ký */
+/* Card Form */
 .authCard {
     background-color: #ffffff;
     width: 100%;
@@ -100,7 +100,7 @@
     box-shadow: 0 0 0 3px rgba(27, 42, 58, 0.08);
 }
 
-/* Nút bấm Navy đặc trưng */
+/* Nút bấm Navy */
 .submitBtn {
     width: 100%;
     padding: 0.95rem;
@@ -138,7 +138,59 @@
     margin-left: 0.3rem;
 }
 
-/* Footer đầm màu Navy */
+/* --- Khung Nhập Mã OTP 6 Số --- */
+.otpContainer {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 1.5rem 0 2rem 0;
+}
+
+.otpInput {
+    width: 48px;
+    height: 54px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid #dcd6cd;
+    border-radius: 8px;
+    background-color: #fcfbf9;
+    color: #1b2a3a;
+    transition: all 0.2s ease;
+}
+
+.otpInput:focus {
+    outline: none;
+    border-color: #1b2a3a;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(27, 42, 58, 0.08);
+}
+
+/* Khung Thông Báo Thành Công */
+.successBox {
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.successIcon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.successBox h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    color: #15803d;
+    margin: 0 0 0.5rem 0;
+}
+
+.successBox p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Footer */
 .footer {
     background-color: #1b2a3a;
     color: #94a3b8;
