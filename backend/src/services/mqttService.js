@@ -1,28 +1,21 @@
 const mqtt = require('mqtt');
-const SensorData = require('../models/sensorData');
-const Settings = require('../models/settings');
-const WateringLog = require('../models/wateringLog');
+const SensorData = require('../models/SensorData');
+const Settings = require('../models/Settings');
 
-// ----------------------------------------------------------
-// CAU HINH MQTT TOPICS VÀ BROKER
-// ----------------------------------------------------------
-const MQTT_BROKER = process.env.MQTT_BROKER || 'broker.hivemq.com';
-const MQTT_PORT = process.env.MQTT_PORT || 1883;
+// Kết nối MQTT Broker
+const client = mqtt.connect('mqtt://broker.hivemq.com:1883');
 
-// Topics Nhan du lieu tu ESP32 (Subscribe)
+// Topics
 const TEMP_HUMI_TOPIC = 'plantcare/group15/temperature_humidity';
 const SOIL_LIGHT_TOPIC = 'plantcare/group15/soil_light';
 const WATER_LEVEL_TOPIC = 'plantcare/group15/water_level';
 const MODE_STATUS_TOPIC = 'plantcare/group15/mode';
 
-// Topics Gui lenh xuong ESP32 (Publish)
-const MODE_TOPIC_COMMAND = 'plantcare/group15/device/mode';
 const PUMP_TOPIC_COMMAND = 'plantcare/group15/device/pump';
+const MODE_TOPIC_COMMAND = 'plantcare/group15/device/mode';
 
-let client = null;
-
-// Bien tam luu trang thai cam bien gan nhat
-let currentSensorState = {
+// Biến bộ nhớ tạm để gom dữ liệu cảm biến trước khi lưu
+let currentSensorBuffer = {
   temperature: 25,
   airHumidity: 60,
   soilHumidity: 50,
@@ -30,111 +23,77 @@ let currentSensorState = {
   waterLevel: 80,
 };
 
+// Hàm khởi tạo MQTT và lắng nghe dữ liệu từ ESP32
 const initMQTT = (io) => {
-  const brokerUrl = `mqtt://${MQTT_BROKER}:${MQTT_PORT}`;
-  client = mqtt.connect(brokerUrl);
-
   client.on('connect', () => {
-    console.log('[MQTT] Connected to MQTT Broker successfully');
-
-    const topicsToSubscribe = [
+    console.log('[MQTT Service] Đã kết nối MQTT Broker thành công');
+    client.subscribe([
       TEMP_HUMI_TOPIC,
       SOIL_LIGHT_TOPIC,
       WATER_LEVEL_TOPIC,
       MODE_STATUS_TOPIC,
-    ];
-
-    client.subscribe(topicsToSubscribe, (err) => {
-      if (!err) {
-        console.log('[MQTT] Subscribed to all PlantCare Group 15 topics');
-      }
-    });
+    ]);
   });
 
   client.on('message', async (topic, message) => {
     try {
       const payload = JSON.parse(message.toString());
 
-      // Cap nhat bo nho tam dua tren Topic nhan duoc
+      // 1. Ánh xạ Topic Nhiệt độ & Độ ẩm không khí
       if (topic === TEMP_HUMI_TOPIC) {
-        if (payload.temperature !== undefined) currentSensorState.temperature = payload.temperature;
-        if (payload.airHumidity !== undefined) currentSensorState.airHumidity = payload.airHumidity;
-      } else if (topic === SOIL_LIGHT_TOPIC) {
-        if (payload.soilHumidity !== undefined) currentSensorState.soilHumidity = payload.soilHumidity;
-        if (payload.lightIntensity !== undefined) currentSensorState.lightIntensity = payload.lightIntensity;
-      } else if (topic === WATER_LEVEL_TOPIC) {
-        if (payload.waterLevel !== undefined) currentSensorState.waterLevel = payload.waterLevel;
-      } else if (topic === MODE_STATUS_TOPIC) {
+        currentSensorBuffer.temperature = payload.temperature ?? currentSensorBuffer.temperature;
+        currentSensorBuffer.airHumidity = payload.humidity_air ?? currentSensorBuffer.airHumidity;
+      }
+
+      // 2. Ánh xạ Topic Độ ẩm đất & Ánh sáng
+      else if (topic === SOIL_LIGHT_TOPIC) {
+        currentSensorBuffer.soilHumidity = payload.humidity_soil ?? currentSensorBuffer.soilHumidity;
+        currentSensorBuffer.lightIntensity = payload.light_raw ?? currentSensorBuffer.lightIntensity;
+      }
+
+      // 3. Ánh xạ Topic Mực nước & Lưu CSDL
+      else if (topic === WATER_LEVEL_TOPIC) {
+        currentSensorBuffer.waterLevel = payload.water_percent ?? currentSensorBuffer.waterLevel;
+
+        // Lưu vào CSDL MongoDB
+        const savedData = await SensorData.create(currentSensorBuffer);
+
+        // Bắn dữ liệu Realtime về cho Frontend WebSockets
+        if (io) {
+          io.emit('sensor_update', savedData);
+        }
+      }
+
+      // 4. Nhận phản hồi trạng thái Chế độ
+      else if (topic === MODE_STATUS_TOPIC) {
         if (payload.mode) {
           await Settings.findOneAndUpdate({}, { mode: payload.mode }, { upsert: true });
-        }
-        return;
-      }
-
-      // 1. Luu ban ghi tong hop vao Azure Cosmos DB
-      const newSensorData = new SensorData({
-        soilHumidity: currentSensorState.soilHumidity,
-        airHumidity: currentSensorState.airHumidity,
-        temperature: currentSensorState.temperature,
-        lightIntensity: currentSensorState.lightIntensity,
-        waterLevel: currentSensorState.waterLevel,
-      });
-      await newSensorData.save();
-
-      // 2. Phat du lieu Realtime qua Socket.io
-      io.emit('sensor_update', newSensorData);
-
-      // 3. Kiem tra va xu ly logic che do AUTO
-      let currentSettings = await Settings.findOne();
-      if (!currentSettings) {
-        currentSettings = await Settings.create({});
-      }
-
-      if (currentSettings.mode === 'AUTO') {
-        if (currentSensorState.soilHumidity < currentSettings.soilThreshold && currentSettings.pumpStatus === 'OFF') {
-          currentSettings.pumpStatus = 'ON';
-          await currentSettings.save();
-
-          sendPumpCommand('ON');
-          io.emit('pump_status_change', { pumpStatus: 'ON', mode: 'AUTO' });
-
-          const newLog = new WateringLog({
-            startTime: new Date().toLocaleTimeString('vi-VN'),
-            endTime: 'Dang hoat dong...',
-            duration: 'Co dinh 30s',
-            mode: 'AUTO',
-            humidityBefore: `${currentSensorState.soilHumidity}%`,
-            reason: `Do am dat (${currentSensorState.soilHumidity}%) thap hon nguong (${currentSettings.soilThreshold}%)`,
-          });
-          await newLog.save();
-        } else if (currentSensorState.soilHumidity >= currentSettings.soilThreshold && currentSettings.pumpStatus === 'ON') {
-          currentSettings.pumpStatus = 'OFF';
-          await currentSettings.save();
-
-          sendPumpCommand('OFF');
-          io.emit('pump_status_change', { pumpStatus: 'OFF', mode: 'AUTO' });
+          if (io) {
+            io.emit('pump_status_change', { mode: payload.mode });
+          }
         }
       }
     } catch (error) {
-      console.error(`[MQTT Error] Failed to process message on ${topic}: ${error.message}`);
+      console.error('[MQTT Service] Lỗi xử lý dữ liệu MQTT:', error.message);
     }
   });
-
-  client.on('error', (error) => {
-    console.error(`[MQTT Error] Connection error: ${error.message}`);
-  });
 };
 
+// Hàm gửi lệnh BẬT/TẮT BƠM (Dạng JSON { pump: 1/0 } cho C++)
 const sendPumpCommand = (action) => {
-  if (client && client.connected) {
-    client.publish(PUMP_TOPIC_COMMAND, JSON.stringify({ action }));
-  }
+  const pumpValue = action === 'ON' ? 1 : 0;
+  const payload = JSON.stringify({ pump: pumpValue });
+  client.publish(PUMP_TOPIC_COMMAND, payload);
 };
 
+// Hàm gửi lệnh CHUYỂN MODE (Dạng JSON { mode: "AUTO"/"MANUAL" })
 const sendModeCommand = (mode) => {
-  if (client && client.connected) {
-    client.publish(MODE_TOPIC_COMMAND, JSON.stringify({ action: mode }));
-  }
+  const payload = JSON.stringify({ mode });
+  client.publish(MODE_TOPIC_COMMAND, payload);
 };
 
-module.exports = { initMQTT, sendPumpCommand, sendModeCommand };
+module.exports = {
+  initMQTT,
+  sendPumpCommand,
+  sendModeCommand,
+};

@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "mock": "node mockESP32.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -21,10 +22,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
-  },
-  "scripts": {
-  "start": "node server.js",
-  "dev": "nodemon server.js",
-  "mock": "node mockESP32.js"
   }
 }

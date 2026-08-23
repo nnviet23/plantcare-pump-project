@@ -32,4 +32,5 @@ const sensorDataSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('SensorData', sensorDataSchema);
+// Tránh lỗi OverwriteModelError khi Nodemon restart
+module.exports = mongoose.models.SensorData || mongoose.model('SensorData', sensorDataSchema);

@@ -33,4 +33,4 @@ const wateringLogSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('WateringLog', wateringLogSchema);
+module.exports = mongoose.models.WateringLog || mongoose.model('WateringLog', wateringLogSchema);
