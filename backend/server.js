@@ -13,12 +13,13 @@ const { initMQTT } = require('./src/services/mqttService');
 const app = express();
 const server = http.createServer(app);
 
-// Cau hinh Middleware
+// Cau hinh Middleware CORS
 app.use(cors({
-  origin: '*',
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 
 // Khoi tao Socket.io Server
@@ -61,7 +62,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Khoid chay Server
+// Khoi chay Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`[Server] SmartFarm Backend listening on port ${PORT}`);
