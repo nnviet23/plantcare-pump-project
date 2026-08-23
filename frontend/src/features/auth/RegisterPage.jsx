@@ -1,31 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from './layout';
+import { AuthContext } from '../../context/AuthContext';
 import styles from './auth.module.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { register } = useContext(AuthContext);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrorMessage('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('Mật khẩu xác nhận không khớp!');
+      setErrorMessage('Mật khẩu xác nhận không khớp');
       return;
     }
 
-    console.log('Registering user, sending OTP to:', formData.email);
-    // Kích hoạt API gửi OTP về Email, đồng thời chuyển hướng sang trang Verify OTP
-    navigate('/verify-otp', { state: { email: formData.email } });
+    setIsSubmitting(true);
+    try {
+      const res = await register(formData.username, formData.email, formData.password);
+      if (res.success) {
+        navigate('/verify-otp', { state: { email: formData.email } });
+      }
+    } catch (error) {
+      setErrorMessage(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -35,6 +49,12 @@ export default function RegisterPage() {
         <p className={styles.subtitle}>
           Tạo tài khoản mới để bắt đầu quản lý hệ thống tưới
         </p>
+
+        {errorMessage && (
+          <div style={{ color: '#dc2626', marginBottom: '1rem', fontSize: '0.875rem', textAlign: 'center' }}>
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
@@ -89,8 +109,8 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button type="submit" className={styles.submitBtn}>
-            Tiếp tục (Nhận mã OTP)
+          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+            {isSubmitting ? 'Đang xử lý...' : 'Tiếp tục (Nhận mã OTP)'}
           </button>
         </form>
 

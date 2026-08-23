@@ -1,74 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './history.module.css';
 import { Calendar, Filter, Clock, Droplets, Activity } from 'lucide-react';
+import api from '../../services/realtimeApi';
 
 export default function HistoryPage() {
   const [filterMode, setFilterMode] = useState('ALL');
-  const [selectedDate, setSelectedDate] = useState('2026-08-02');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Dữ liệu mẫu nhật ký đã loại bỏ nút CSV & cập nhật đủ các trường
-  const logs = [
-    {
-      id: 1,
-      startTime: '2026-08-02 08:15:20',
-      endTime: '2026-08-02 08:15:35',
-      duration: '15 giây',
-      mode: 'AUTO',
-      humidityBefore: '38%',
-      reason: 'Độ ẩm đất xuống dưới ngưỡng',
-    },
-    {
-      id: 2,
-      startTime: '2026-08-01 18:30:10',
-      endTime: '2026-08-01 18:30:40',
-      duration: '30 giây',
-      mode: 'MANUAL',
-      humidityBefore: '42%',
-      reason: 'Người dùng bật/ tắt thủ công ',
-    },
-    {
-      id: 3,
-      startTime: '2026-08-01 06:00:00',
-      endTime: '2026-08-01 06:00:20',
-      duration: '20 giây',
-      mode: 'AUTO',
-      humidityBefore: '39%',
-      reason: 'Độ ẩm đất xuống dưới ngưỡng',
-    },
-    {
-      id: 4,
-      startTime: '2026-07-31 15:45:12',
-      endTime: '2026-07-31 15:45:27',
-      duration: '15 giây',
-      mode: 'AUTO',
-      humidityBefore: '37%',
-      reason: 'Độ ẩm đất xuống dưới ngưỡng',
-    },
-    {
-      id: 5,
-      startTime: '2026-07-31 09:20:00',
-      endTime: '2026-07-31 09:20:45',
-      duration: '45 giây',
-      mode: 'MANUAL',
-      humidityBefore: '40%',
-      reason: 'Người dùng bật/ tắt thủ công ',
-    },
-  ];
+  useEffect(() => {
+    // Lấy danh sách nhật ký tưới từ CSDL Backend
+    const fetchLogs = async () => {
+      try {
+        const response = await api.get('/farm/logs');
+        if (response.data.success) {
+          setLogs(response.data.data || []);
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải nhật ký tưới:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Lọc danh sách theo chế độ
+    fetchLogs();
+  }, []);
+
+  // Lọc danh sách theo chế độ tưới và ngày được chọn
   const filteredLogs = logs.filter((log) => {
-    if (filterMode === 'ALL') return true;
-    return log.mode === filterMode;
+    const matchesMode = filterMode === 'ALL' || log.mode === filterMode;
+
+    let matchesDate = true;
+    if (selectedDate) {
+      const logDate = log.createdAt
+        ? new Date(log.createdAt).toISOString().slice(0, 10)
+        : log.startTime?.slice(0, 10);
+      matchesDate = logDate === selectedDate;
+    }
+
+    return matchesMode && matchesDate;
   });
 
-  // Tính toán số liệu thống kê
+  // Tính toán số liệu thống kê từ danh sách đã lọc
   const totalWaterings = filteredLogs.length;
   const avgDurationSeconds =
     totalWaterings > 0
       ? Math.round(
-          filteredLogs.reduce((acc, log) => acc + parseInt(log.duration), 0) / totalWaterings
+          filteredLogs.reduce((acc, log) => {
+            const parsedDuration = parseInt(log.duration) || 0;
+            return acc + parsedDuration;
+          }, 0) / totalWaterings
         )
       : 0;
+
+  if (loading) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+        Đang tải dữ liệu nhật ký...
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -129,7 +121,7 @@ export default function HistoryPage() {
         </div>
       </div>
 
-      {/* Bảng Lịch Sử Detail */}
+      {/* Bảng Lịch Sử Chi Tiết */}
       <div className={styles.tableCard}>
         <table className={styles.table}>
           <thead>
@@ -143,23 +135,31 @@ export default function HistoryPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredLogs.map((log) => (
-              <tr key={log.id}>
-                <td className={styles.timeText}>{log.startTime}</td>
-                <td className={styles.timeText}>{log.endTime}</td>
-                <td className={styles.durationText}>{log.duration}</td>
-                <td>
-                  <span className={log.mode === 'AUTO' ? styles.badgeAuto : styles.badgeManual}>
-                    {log.mode}
-                  </span>
+            {filteredLogs.length > 0 ? (
+              filteredLogs.map((log) => (
+                <tr key={log._id || log.id}>
+                  <td className={styles.timeText}>{log.startTime}</td>
+                  <td className={styles.timeText}>{log.endTime}</td>
+                  <td className={styles.durationText}>{log.duration}</td>
+                  <td>
+                    <span className={log.mode === 'AUTO' ? styles.badgeAuto : styles.badgeManual}>
+                      {log.mode}
+                    </span>
+                  </td>
+                  <td className={styles.humidityText}>
+                    <Droplets size={13} style={{ marginRight: '4px' }} />
+                    {log.humidityBefore}
+                  </td>
+                  <td className={styles.reasonText}>{log.reason}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
+                  Không tìm thấy nhật ký tưới nào phù hợp.
                 </td>
-                <td className={styles.humidityText}>
-                  <Droplets size={13} style={{ marginRight: '4px' }} />
-                  {log.humidityBefore}
-                </td>
-                <td className={styles.reasonText}>{log.reason}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

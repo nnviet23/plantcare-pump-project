@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const { connectDB } = require('./src/config/services');
 const authRoutes = require('./src/routes/authRoutes');
+const farmRoutes = require('./src/routes/farmRoutes');
+const chatbotRoutes = require('./src/routes/chatbotRoutes');
+const { initMQTT } = require('./src/services/mqttService');
 
 const app = express();
 const server = http.createServer(app);
@@ -31,8 +34,13 @@ app.set('io', io);
 // Ket noi Co so du lieu Azure Cosmos DB
 connectDB();
 
+// Khoi tao MQTT Client va truyen doi tuong WebSockets io
+initMQTT(io);
+
 // Dang ky Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/farm', farmRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // Test API Route Health Check
 app.get('/api/health', (req, res) => {

@@ -1,21 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from './layout';
+import { AuthContext } from '../../context/AuthContext';
 import styles from './auth.module.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
   const [formData, setFormData] = useState({ username: '', password: '' });
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrorMessage('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Logging in:', formData);
-    // Gọi API đăng nhập thành công -> chuyển về Trang chủ
-    navigate('/');
+    setIsSubmitting(true);
+
+    const res = await login(formData.username, formData.password);
+    if (res?.success) {
+      navigate('/');
+    } else {
+      setErrorMessage(res?.message || 'Đăng nhập thất bại');
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -25,6 +37,12 @@ export default function LoginPage() {
         <p className={styles.subtitle}>
           Vui lòng đăng nhập để truy cập bảng điều khiển SmartFarm
         </p>
+
+        {errorMessage && (
+          <div style={{ color: '#dc2626', marginBottom: '1rem', fontSize: '0.875rem', textAlign: 'center' }}>
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
@@ -53,8 +71,8 @@ export default function LoginPage() {
             />
           </div>
 
-          <button type="submit" className={styles.submitBtn}>
-            Đăng Nhập
+          <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+            {isSubmitting ? 'Đang xác thực...' : 'Đăng Nhập'}
           </button>
         </form>
 

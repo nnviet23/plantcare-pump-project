@@ -1,16 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useContext } from 'react';
 import styles from './chatbot.module.css';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import api from '../../services/realtimeApi';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function ChatbotPage() {
+  const { user } = useContext(AuthContext);
+  const userName = user?.username || 'Tainbow';
+
   const [messages, setMessages] = useState([
     {
       id: 1,
       sender: 'ai',
-      text: 'Xin chào Nam Việt! Tôi là Trợ lý AI PlantCare. Tôi có thể giúp gì cho vườn cây của bạn hôm nay?',
+      text: `Xin chào ${userName}! Tôi là Trợ lý AI PlantCare. Tôi có thể giúp gì cho vườn cây của bạn hôm nay?`,
     },
   ]);
   const [inputText, setInputText] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Tự động cuộn xuống tin nhắn mới nhất
@@ -20,33 +26,44 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isThinking]);
 
-  // Gửi câu hỏi
-  const handleSendMessage = (textToSend) => {
+  // Gửi câu hỏi đến Gemini AI API thông qua Backend
+  const handleSendMessage = async (textToSend) => {
     const query = textToSend || inputText;
-    if (!query.trim()) return;
+    if (!query.trim() || isThinking) return;
 
-    // Tin nhắn người dùng
+    // 1. Thêm tin nhắn của người dùng vào giao diện
     const userMsg = { id: Date.now(), sender: 'user', text: query };
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
+    setIsThinking(true);
 
-    // Phản hồi giả lập từ AI (Trợ lý thông minh)
-    setTimeout(() => {
-      let aiReply = 'Cảm ơn bạn đã hỏi. Tôi đang phân tích thông số từ cảm biến để tư vấn chính xác nhất!';
-      
-      if (query.includes('vàng lá')) {
-        aiReply = 'Lá cây bị vàng thường do 2 nguyên nhân chính: Tưới quá nhiều nước gây úng rễ (độ ẩm đát > 85%) hoặc thiếu ánh sáng. Bạn nên kiểm tra lại mực nước bể và giảm tần suất tưới tự động nhé!';
-      } else if (query.includes('độ ẩm')) {
-        aiReply = 'Độ ẩm đất tối ưu cho hầu hết các loại cây cảnh văn phòng là từ 40% - 70%. Hiện tại hệ thống đang báo 68%, đây là mức rất lý tưởng!';
-      } else if (query.includes('lịch tưới')) {
-        aiReply = 'Nên đặt lịch tưới vào lúc sáng sớm (6:00 - 8:00 AM) hoặc chiều mát (17:00 PM). Tránh tưới giữa trưa nắng vì sự chênh lệch nhiệt độ đột ngột dễ làm cây bị sốc nhiệt.';
+    try {
+      // 2. Gọi API Chatbot từ Backend
+      const response = await api.post('/chatbot/ask', { message: query });
+
+      if (response.data.success) {
+        const aiMsg = {
+          id: Date.now() + 1,
+          sender: 'ai',
+          text: response.data.reply,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        throw new Error('Không nhận được phản hồi từ Trợ lý AI');
       }
-
-      const aiMsg = { id: Date.now() + 1, sender: 'ai', text: aiReply };
-      setMessages((prev) => [...prev, aiMsg]);
-    }, 800);
+    } catch (error) {
+      console.error('Lỗi kết nối AI Gemini:', error);
+      const errorMsg = {
+        id: Date.now() + 1,
+        sender: 'ai',
+        text: 'Rất tiếc, hệ thống đang gặp sự cố khi kết nối tới Trợ lý AI. Vui lòng kiểm tra lại mạng hoặc thử lại sau ít phút!',
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   return (
@@ -82,6 +99,20 @@ export default function ChatbotPage() {
               </div>
             </div>
           ))}
+
+          {/* Trạng thái AI đang suy nghĩ */}
+          {isThinking && (
+            <div className={`${styles.messageRow} ${styles.aiRow}`}>
+              <div className={`${styles.avatar} ${styles.aiAvatar}`}>
+                <Bot size={18} />
+              </div>
+              <div className={`${styles.bubble} ${styles.aiBubble}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+                <Loader2 size={16} className="animate-spin" />
+                <span>PlantCare AI đang phân tích dữ liệu vườn...</span>
+              </div>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -93,24 +124,27 @@ export default function ChatbotPage() {
           <button
             className={styles.chip}
             onClick={() => handleSendMessage('Cây bị vàng lá nên xử lý thế nào?')}
+            disabled={isThinking}
           >
             🍂 Cây bị vàng lá?
           </button>
           <button
             className={styles.chip}
             onClick={() => handleSendMessage('Độ ẩm đất bao nhiêu là tốt nhất?')}
+            disabled={isThinking}
           >
             💧 Độ ẩm đất tối ưu?
           </button>
           <button
             className={styles.chip}
             onClick={() => handleSendMessage('Nên đặt lịch tưới vào khung giờ nào?')}
+            disabled={isThinking}
           >
             ⏰ Lịch tưới phù hợp?
           </button>
         </div>
 
-        {/* Ô Nhập Nhắn Tin */}
+        {/* Ô Nhập Tin Nhắn */}
         <form
           className={styles.inputForm}
           onSubmit={(e) => {
@@ -124,8 +158,9 @@ export default function ChatbotPage() {
             placeholder="Hỏi AI về tình trạng cây trồng hoặc cách xử lý..."
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            disabled={isThinking}
           />
-          <button type="submit" className={styles.sendBtn}>
+          <button type="submit" className={styles.sendBtn} disabled={isThinking || !inputText.trim()}>
             <Send size={18} />
           </button>
         </form>
