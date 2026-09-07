@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/e14b2104-98b2-445e-b743-d8028cf31dc1/resourceGroups/PlantCare-RG/providers/Microsoft.Web/sites/plantcare-backend-api",
+    "appService.deploySubpath": "backend"
+}
