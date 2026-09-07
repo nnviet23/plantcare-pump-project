@@ -1,9 +1,25 @@
 ﻿const mqtt = require('mqtt');
 const SensorData = require('../models/sensorData');
 const Settings = require('../models/settings');
+const WateringLog = require('../models/wateringLog');
+const User = require('../models/user');
+const { sendLowWaterAlertEmail } = require('./emailService');
 
 let client;
 let currentSensorBuffer = {};
+
+// Cờ kiểm soát chỉ gửi 1 mail duy nhất cho mỗi đợt cạn nước
+let hasSentLowWaterAlert = false;
+
+// --- BỘ QUẢN LÝ CHU KỲ TƯỚI TỰ ĐỘNG (30S TƯỚI - 15S NGHỈ) ---
+const autoCycle = {
+  isWatering: false,
+  isResting: false,
+  wateringTimer: null,
+  restingTimer: null,
+  runningLogId: null,
+  startedAt: null,
+};
 
 const prefix = process.env.MQTT_TOPIC_PREFIX || 'plantcare/group15';
 
@@ -94,10 +110,64 @@ const sendPumpCommand = (action) =>
 const sendModeCommand = (mode) =>
   publish(`${prefix}/device/mode`, { mode });
 
+async function cancelAutoWateringEmergency(reasonText, io) {
+  if (autoCycle.wateringTimer) {
+    clearTimeout(autoCycle.wateringTimer);
+    autoCycle.wateringTimer = null;
+  }
+  if (autoCycle.restingTimer) {
+    clearTimeout(autoCycle.restingTimer);
+    autoCycle.restingTimer = null;
+  }
+
+  if (autoCycle.isWatering && autoCycle.runningLogId) {
+    const durationSec = Math.max(1, Math.round((Date.now() - autoCycle.startedAt.getTime()) / 1000));
+    await WateringLog.findByIdAndUpdate(autoCycle.runningLogId, {
+      endTime: new Date().toLocaleTimeString('vi-VN'),
+      duration: `${durationSec} giây (Ngắt: ${reasonText})`,
+      status: 'COMPLETED',
+    });
+    io?.emit('logs_update');
+  }
+
+  autoCycle.isWatering = false;
+  autoCycle.isResting = false;
+  autoCycle.runningLogId = null;
+  autoCycle.startedAt = null;
+}
+
+async function finish30sWateringCycle(io) {
+  console.log('[AUTO] Đã tưới đủ 30 giây. Ngắt bơm và chuyển sang nghỉ 15 giây.');
+
+  await sendPumpCommand('OFF');
+  await Settings.updateOne({}, { pumpStatus: 'OFF' });
+  io?.emit('pump_status_change', { pumpStatus: 'OFF', mode: 'AUTO' });
+
+  if (autoCycle.runningLogId) {
+    await WateringLog.findByIdAndUpdate(autoCycle.runningLogId, {
+      endTime: new Date().toLocaleTimeString('vi-VN'),
+      duration: '30 giây',
+      status: 'COMPLETED',
+    });
+    io?.emit('logs_update');
+  }
+
+  autoCycle.isWatering = false;
+  autoCycle.runningLogId = null;
+  autoCycle.startedAt = null;
+  autoCycle.wateringTimer = null;
+
+  autoCycle.isResting = true;
+  autoCycle.restingTimer = setTimeout(() => {
+    autoCycle.isResting = false;
+    autoCycle.restingTimer = null;
+    console.log('[AUTO] Hết 15 giây nghỉ. Cho phép chu kỳ tưới tiếp theo.');
+  }, 15000);
+}
+
 function initMQTT(io) {
   if (client) return client;
 
-  // Tự động bổ sung giao thức mqtt:// nếu cấu hình .env chỉ điền hostname thuần
   let brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://broker.hivemq.com';
   const hasProtocol = /^(mqtt|mqtts|ws|wss|tcp):\/\//.test(brokerUrl);
   if (!hasProtocol) {
@@ -108,7 +178,7 @@ function initMQTT(io) {
     port: Number(process.env.MQTT_PORT) || 1883,
     reconnectPeriod: 5000,
     connectTimeout: 15000,
-    ...(process.env.MQTT_USERNAME
+    ...(process.env.EMAIL_USER && process.env.MQTT_USERNAME
       ? {
           username: process.env.MQTT_USERNAME,
           password: process.env.MQTT_PASSWORD,
@@ -132,19 +202,16 @@ function initMQTT(io) {
         return;
       }
 
-      // Xử lý gói tin đồng bộ chế độ hoạt động và trạng thái máy bơm từ mạch
       if (topic === topics.mode) {
         const update = {};
-
         if (['AUTO', 'MANUAL'].includes(payload.mode)) {
           update.mode = payload.mode;
+          if (payload.mode === 'MANUAL') {
+            await cancelAutoWateringEmergency('Chuyển sang chế độ thủ công', io);
+          }
         }
-        if ([0, 1].includes(payload.pump)) {
-          update.pumpStatus = payload.pump === 1 ? 'ON' : 'OFF';
-        }
-        if (['ON', 'OFF'].includes(payload.pumpStatus)) {
-          update.pumpStatus = payload.pumpStatus;
-        }
+        if ([0, 1].includes(payload.pump)) update.pumpStatus = payload.pump === 1 ? 'ON' : 'OFF';
+        if (['ON', 'OFF'].includes(payload.pumpStatus)) update.pumpStatus = payload.pumpStatus;
 
         if (Object.keys(update).length) {
           const settings = await Settings.findOneAndUpdate({}, update, {
@@ -152,63 +219,99 @@ function initMQTT(io) {
             new: true,
             runValidators: true,
           });
-
           io?.emit('pump_status_change', update);
           io?.emit('settings_update', settings);
         }
         return;
       }
 
-      // Bỏ qua topic không nằm trong danh sách đăng ký
       if (!Object.values(topics).includes(topic)) return;
 
       currentSensorBuffer = mergeSensorPayload(currentSensorBuffer, topic, payload);
 
-      // Lưu trữ dữ liệu đo đạc thực tế vào CSDL và phát socket thời gian thực
       if (Object.keys(currentSensorBuffer).length) {
         const saved = await SensorData.create(currentSensorBuffer);
         io?.emit('sensor_update', saved);
 
-        // --- BẮT ĐẦU LOGIC QUYẾT ĐỊNH TỰ ĐỘNG TƯỚI (CLOUD AUTOMATION) ---
-        const settings = await Settings.findOne({});
-        
-        if (settings && settings.mode === 'AUTO') {
-          const soilMoisture = currentSensorBuffer.soilHumidity;
-          const waterLevel = currentSensorBuffer.waterLevel;
-          const threshold = settings.soilThreshold || 40;
+        const soilMoisture = currentSensorBuffer.soilHumidity;
+        const waterLevel = currentSensorBuffer.waterLevel;
 
-          // ƯU TIÊN 1 (BẢO VỆ CHỐNG CHÁY): Nếu nước trong bể cạn (<= 15%), cưỡng chế TẮT bơm ngay lập tức
-          if (typeof waterLevel === 'number' && waterLevel <= 15) {
-            if (settings.pumpStatus !== 'OFF') {
-              await sendPumpCommand('OFF');
-              await Settings.updateOne({}, { pumpStatus: 'OFF' });
-              io?.emit('pump_status_change', { pumpStatus: 'OFF', mode: 'AUTO' });
-              console.warn(`[AUTO Cảnh Báo] Mực nước quá thấp (${waterLevel}%). Tự động ngắt bơm bảo vệ động cơ!`);
+        // --- CƠ CHẾ GỬI CẢNH BÁO NƯỚC THẤP ĐÚNG 1 LẦN (EDGE-TRIGGER) ---
+        if (typeof waterLevel === 'number') {
+          if (waterLevel <= 15) {
+            // Chỉ gửi đúng 1 lần khi bắt đầu tụt xuống <= 15%
+            if (!hasSentLowWaterAlert) {
+              hasSentLowWaterAlert = true;
+              try {
+                const users = await User.find({}, 'email');
+                const emailList = users.map((u) => u.email).filter(Boolean);
+                sendLowWaterAlertEmail(waterLevel, emailList);
+              } catch (e) {
+                sendLowWaterAlertEmail(waterLevel);
+              }
+            }
+          } else if (waterLevel > 20) {
+            // Khi nước đã được châm đầy (> 20%), reset lại cờ để sẵn sàng cho lần cạn tiếp theo
+            if (hasSentLowWaterAlert) {
+              hasSentLowWaterAlert = false;
+              console.log('[AUTO] Nước đã được châm đầy trở lại. Reset cờ cảnh báo.');
             }
           }
-          // ƯU TIÊN 2: Nước an toàn (> 15%) VÀ đất khô dưới ngưỡng -> Tự động BẬT bơm
-          else if (typeof soilMoisture === 'number' && soilMoisture < threshold) {
-            const isWaterSafe = typeof waterLevel === 'number' ? waterLevel > 15 : true;
-            if (isWaterSafe && settings.pumpStatus !== 'ON') {
+        }
+
+        const settings = await Settings.findOne({});
+        if (settings && settings.mode === 'AUTO') {
+          const threshold = settings.soilThreshold || 40;
+
+          // ƯU TIÊN 1: NƯỚC THẤP (<= 15%) -> CƯỠNG CHẾ NGẮT BƠM
+          if (typeof waterLevel === 'number' && waterLevel <= 15) {
+            if (settings.pumpStatus !== 'OFF' || autoCycle.isWatering) {
+              await sendPumpCommand('OFF');
+              await Settings.updateOne({}, { pumpStatus: 'OFF' });
+              await cancelAutoWateringEmergency('Bể hết nước', io);
+              io?.emit('pump_status_change', { pumpStatus: 'OFF', mode: 'AUTO' });
+              console.warn(`[AUTO] Bể cạn nước (${waterLevel}%). Ngắt bơm khẩn cấp!`);
+            }
+            return;
+          }
+
+          // ƯU TIÊN 2: BẮT ĐẦU CHU KỲ TƯỚI 30S (KÈM KHÓA NGHỈ 15S)
+          const isWaterSafe = typeof waterLevel === 'number' ? waterLevel > 15 : true;
+          const isSoilDry = typeof soilMoisture === 'number' && soilMoisture < threshold;
+
+          if (isWaterSafe && isSoilDry) {
+            if (!autoCycle.isWatering && !autoCycle.isResting) {
+              autoCycle.isWatering = true;
+              autoCycle.startedAt = new Date();
+
               await sendPumpCommand('ON');
               await Settings.updateOne({}, { pumpStatus: 'ON' });
               io?.emit('pump_status_change', { pumpStatus: 'ON', mode: 'AUTO' });
-              console.log(`[AUTO] Đất khô (${soilMoisture}% < ${threshold}%). Tự động bật máy bơm.`);
-            }
-          } 
-          // ƯU TIÊN 3: Đất đã đủ ẩm (ngưỡng + 5% để tạo trễ tránh bật tắt liên tục) -> Tự động TẮT bơm
-          else if (typeof soilMoisture === 'number' && soilMoisture >= (threshold + 5)) {
-            if (settings.pumpStatus !== 'OFF') {
-              await sendPumpCommand('OFF');
-              await Settings.updateOne({}, { pumpStatus: 'OFF' });
-              io?.emit('pump_status_change', { pumpStatus: 'OFF', mode: 'AUTO' });
-              console.log(`[AUTO] Đất đã đủ ẩm (${soilMoisture}% >= ${threshold + 5}%). Tự động tắt máy bơm.`);
+
+              const newLog = await WateringLog.create({
+                startTime: autoCycle.startedAt.toLocaleTimeString('vi-VN'),
+                endTime: 'Đang hoạt động',
+                duration: '0 giây',
+                mode: 'AUTO',
+                humidityBefore: `${soilMoisture}%`,
+                reason: `Tự động tưới (30s): Độ ẩm đất (${soilMoisture}%) dưới ngưỡng (${threshold}%)`,
+                startedAt: autoCycle.startedAt,
+                status: 'RUNNING',
+              });
+              autoCycle.runningLogId = newLog._id;
+              io?.emit('logs_update');
+
+              console.log(`[AUTO] Bắt đầu chu kỳ tưới 30s. Độ ẩm: ${soilMoisture}% < ${threshold}%`);
+
+              autoCycle.wateringTimer = setTimeout(async () => {
+                await finish30sWateringCycle(io);
+              }, 30000);
             }
           }
         }
       }
     } catch {
-      console.error('[MQTT] Không thể xử lý hoặc lưu gói tin cảm biến.');
+      console.error('[MQTT] Không thể xử lý gói tin cảm biến hoặc cập nhật log.');
     }
   });
 
