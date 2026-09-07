@@ -13,19 +13,26 @@ const { initMQTT } = require('./src/services/mqttService');
 const app = express();
 const server = http.createServer(app);
 
-// Cau hinh Middleware CORS
+const allowedOrigins = [
+  'https://nnviet23-plantcare-pump-project.vercel.app',
+  'http://localhost:5173' // Dành cho Vite lúc chạy dev ở local
+];
+
+// Cau hinh Middleware CORS cho Express
 app.use(cors({
-  origin: '*', 
+  origin: allowedOrigins, 
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
 
-// Khoi tao Socket.io Server
+// Khoi tao Socket.io Server voi CORS tuong ung
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: allowedOrigins,
+    credentials: true,
     methods: ['GET', 'POST']
   }
 });
