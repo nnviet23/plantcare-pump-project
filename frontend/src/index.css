@@ -1,1 +1,40 @@
 @import "tailwindcss";
+:root {
+	--bg: #f7f5f0;
+	--card: #ffffff;
+	--muted: #64748b;
+	--primary: #2563eb;
+	--accent: #10b981;
+	--warn: #d97706;
+	--soft-shadow: 0 10px 30px rgba(27, 42, 58, 0.06);
+	--radius: 18px;
+	--surface: #fcfbf9;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html, body, #root {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+	background: var(--bg);
+	color: #1b2a3a;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; }
+
+/* Small utility to unify card look */
+.cardSoft {
+	background: var(--card);
+	border: 1px solid #e8e4dc;
+	border-radius: var(--radius);
+	box-shadow: var(--soft-shadow);
+}
+

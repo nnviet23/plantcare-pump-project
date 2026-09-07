@@ -1,17 +1,13 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import MainLayout from './shared/layouts/MainLayout';
+import { FarmLayout as MainLayout, Dashboard as DashboardPage, Control as ControlPage, History as HistoryPage, Chat as ChatbotPage, Settings, Support } from './features/smartfarm/SmartFarm';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
 import VerifyOtpPage from './features/auth/VerifyOtpPage';
 
-import DashboardPage from './features/dashboard/page';
-import ControlPage from './features/control/page';
-import HistoryPage from './features/history/page';
-import ChatbotPage from './features/chatbot/page';
 
 export default function App() {
   return (
@@ -34,6 +30,8 @@ export default function App() {
           <Route path="/control" element={<ControlPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/chatbot" element={<ChatbotPage />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/support" element={<Support />} />
         </Route>
       </Routes>
     </BrowserRouter>

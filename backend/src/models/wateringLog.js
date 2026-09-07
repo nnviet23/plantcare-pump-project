@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 
 const wateringLogSchema = new mongoose.Schema(
   {
+    startedAt: { type: Date },
+    status: { type: String, enum: ['RUNNING', 'COMPLETED'], default: 'COMPLETED' },
     startTime: {
       type: String,
       required: true,

@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        try { setUser(JSON.parse(storedUser)); } catch { localStorage.removeItem('user'); }
       }
       socket.connect();
     } else {
@@ -20,6 +20,12 @@ export const AuthProvider = ({ children }) => {
     }
     setLoading(false);
   }, [token]);
+
+  useEffect(() => {
+    const expired = () => {localStorage.removeItem('token');localStorage.removeItem('user');setToken(null);setUser(null);socket.disconnect();};
+    window.addEventListener('auth-expired', expired);
+    return () => window.removeEventListener('auth-expired', expired);
+  }, []);
 
   const login = async (username, password) => {
     try {

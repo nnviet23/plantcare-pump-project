@@ -4,24 +4,25 @@ const sensorDataSchema = new mongoose.Schema(
   {
     soilHumidity: {
       type: Number,
-      required: true,
+      default: null,
     },
     airHumidity: {
       type: Number,
-      required: true,
+      default: null,
     },
     temperature: {
       type: Number,
-      required: true,
+      default: null,
     },
     lightIntensity: {
       type: Number,
-      required: true,
+      default: null,
     },
     waterLevel: {
       type: Number,
-      required: true,
+      default: null,
     },
+    lightRaw: { type: Number, default: null },
     timestamp: {
       type: Date,
       default: Date.now,
